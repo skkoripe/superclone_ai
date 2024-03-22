@@ -5,6 +5,9 @@ from wtforms.validators import DataRequired, Length, Optional
 import bleach
 import os
 
+from util import analyze_text_with_google
+from util import generate_style_suggestions_with_openai
+
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
@@ -39,11 +42,18 @@ def analyze_text():
     if form.validate_on_submit(): # data validation check
         text = bleach.clean(form.text.data) # data sanitization
         # Process the text and return the result
-        return {'analysis': '...', 'text': text}
+        sentiment_score = analyze_text_with_google(text)
+        return {'analysis': 'Sentiment score {}'.format(sentiment_score), 'text': text}
     return {'error': 'Invalid input'}, 400
 
 
 # suggest_style endpoint
+# Sample command -
+# curl -X POST http://127.0.0.1:5000/suggest_style \
+# -d "text=Your sample text here" \
+# -d "profession=Your profession here" \
+# -d "target_audience=Your target audience here" \
+# -H "Content-Type: application/x-www-form-urlencoded"
 @app.route('/suggest_style', methods=['POST'])
 def suggest_style():
     form = StyleSuggestionsForm()
@@ -52,7 +62,8 @@ def suggest_style():
         profession = bleach.clean(form.profession.data) # data sanitization
         target_audience = bleach.clean(form.target_audience.data) # data sanitization
         # Process the data and return suggestions
-        return {'suggestions': '...', 'profession': profession, 'target audience': target_audience,
+        suggestions = generate_style_suggestions_with_openai(text, profession, target_audience)
+        return {'suggestions': suggestions, 'profession': profession, 'target audience': target_audience,
                 'text': text}
     return {'error': 'Invalid input'}, 400
 
