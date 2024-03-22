@@ -2,6 +2,7 @@ from flask import Flask, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired, Length, Optional
+import bleach
 import os
 
 app = Flask(__name__)
@@ -29,11 +30,14 @@ def home():
 
 
 # analyze_text endpoint
+# sample command -
+# curl -X POST http://127.0.0.1:5000/analyze_text -d "text=Hello World" -H "Content-Type: application/x-www-form-urlencoded"
+# Data sanitization - https://www.educative.io/answers/how-to-sanitize-user-input-in-python
 @app.route('/analyze_text', methods=['POST'])
 def analyze_text():
     form = TextAnalysisForm()
-    if form.validate_on_submit():
-        text = form.text.data
+    if form.validate_on_submit(): # data validation check
+        text = bleach.clean(form.text.data) # data sanitization
         # Process the text and return the result
         return {'analysis': '...', 'text': text}
     return {'error': 'Invalid input'}, 400
@@ -43,15 +47,13 @@ def analyze_text():
 @app.route('/suggest_style', methods=['POST'])
 def suggest_style():
     form = StyleSuggestionsForm()
-    if form.validate_on_submit():
-        data = {
-            'text': form.text.data,
-            'profession': form.profession.data,
-            'target_audience': form.target_audience.data
-        }
+    if form.validate_on_submit(): # data validation check
+        text = bleach.clean(form.text.data) # data sanitization
+        profession = bleach.clean(form.profession.data) # data sanitization
+        target_audience = bleach.clean(form.target_audience.data) # data sanitization
         # Process the data and return suggestions
-        return {'suggestions': '...', 'profession': form.profession.data, 'target audience': form.target_audience.data,
-                'text': form.text.data}
+        return {'suggestions': '...', 'profession': profession, 'target audience': target_audience,
+                'text': text}
     return {'error': 'Invalid input'}, 400
 
 
